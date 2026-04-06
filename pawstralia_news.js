@@ -94,7 +94,7 @@ async function sendDiscord(stories, date) {
 
   const payload = JSON.stringify({
     embeds: [{
-      title: `🐨 Pawstralia News — ${formattedDate}`,
+      title: `🦘 Pawstralia News — ${formattedDate}`,
       description,
       color: 0x2E8B57,  // forest green
       footer: { text: "Pawstralia News • Australian Wildlife Daily Digest" },
