@@ -42,8 +42,10 @@ async function fetchNews() {
 Find 3-5 interesting, fun or unusual stories about Australian wildlife, animals or nature from that specific date.
 
 For each story write:
-- A funny, punny or dramatic headline with relevant emojis (e.g. "🦘 Kangaroo Escapes Sydney Suburb, Hops Into Local Pub")
-- 1-2 sentence summary of what happened
+- Generate a funny, punny, or dramatic headline about Australian wildlife news. Use a variety of relevant emojis, changing them between headlines and matching the animal or theme (e.g., 🦘 for kangaroos, 🐨 for koalas, 🦡 for wombats, 🎉 for celebrations). Example:
+"Kangaroo Escapes Sydney Suburb, Hops Into Local Pub 🦘🍺"
+Make each headline playful and visually engaging, and alternate emojis so they don’t repeat too predictably.
+- 1-2 sentence summary of what happened - Make each headline playful and visually engaging, and alternate emojis so they don’t repeat too predictably
 
 Format your response as a JSON array, no other text:
 [
