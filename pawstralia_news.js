@@ -45,7 +45,7 @@ For each story write:
 - Generate a funny, punny, or dramatic headline about Australian wildlife news. Use a variety of relevant emojis, changing them between headlines and matching the animal or theme (e.g., 🦘 for kangaroos, 🐨 for koalas, 🦡 for wombats, 🎉 for celebrations). Example:
 "Kangaroo Escapes Sydney Suburb, Hops Into Local Pub 🦘🍺"
 Make each headline playful and visually engaging, and alternate emojis so they don’t repeat too predictably.
-- 1-2 sentence summary of what happened - Make each headline playful and visually engaging, and alternate emojis so they don’t repeat too predictably
+- 1-2 sentence summary of what happened
 
 Format your response as a JSON array, no other text:
 [
@@ -55,7 +55,7 @@ Format your response as a JSON array, no other text:
   }
 ]
 
-Focus only on stories genuinely from ${formattedDate}. If there are no major animal stories from that exact date, use the most recent Australian animal stories you can find and note the actual date. Keep it fun, light-hearted and emoji-rich!`;
+Focus only on stories genuinely from ${formattedDate}. If there are no major animal stories from that exact date, use the most recent Australian animal stories you can find and note the actual date. Keep it fun, light-hearted and emoji-rich! Don't duplicate stories`;
 
   const payload = JSON.stringify({
     model: "gpt-4o-mini-search-preview",
