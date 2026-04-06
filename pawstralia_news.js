@@ -7,6 +7,7 @@
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK_URL;
 
+// Funny headline prefixes to spice up the digest
 const INTROS = [
   "G'day mate! Here's what the animals of Australia got up to yesterday 🦘",
   "Crikey! The wildlife has been busy! Here's yesterday's Pawstralia News 🐨",
@@ -15,34 +16,6 @@ const INTROS = [
   "Strewth! You won't believe what the animals were up to yesterday 🐍",
 ];
 
-// 🔥 přesnější mapa (rozšířená)
-const EMOJI_MAP = {
-  bilby: "🐭",
-  bettong: "🐀",
-  kangaroo: "🦘",
-  wallaby: "🦘",
-  koala: "🐨",
-  crocodile: "🐊",
-  snake: "🐍",
-  shark: "🦈",
-  whale: "🐋",
-  dolphin: "🐬",
-  turtle: "🐢",
-  parrot: "🦜",
-  cockatoo: "🦜",
-  bat: "🦇",
-  spider: "🕷️",
-  dingo: "🐕",
-  platypus: "🦆",
-  echidna: "🦔",
-  cat: "🐱",
-  fox: "🦊",
-};
-
-const FALLBACK_EMOJIS = ["🦘","🐨","🐊","🦜","🦈","🐢","🦇","🐋"];
-
-const STYLES = ["funny", "dramatic", "cute", "chaotic"];
-
 function randomIntro() {
   return INTROS[Math.floor(Math.random() * INTROS.length)];
 }
@@ -50,7 +23,7 @@ function randomIntro() {
 function yesterdayDate() {
   const d = new Date();
   d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split("T")[0]; // "2026-04-05"
 }
 
 function formatDate(isoDate) {
@@ -64,23 +37,28 @@ async function fetchNews() {
   const yesterday = yesterdayDate();
   const formattedDate = formatDate(yesterday);
 
-  const prompt = `Search the web for Australian animal news from ${formattedDate}.
+  const prompt = `Search the web for Australian animal news from ${formattedDate} (yesterday).
 
-Return JSON only.
+Find 3-5 interesting, fun or unusual stories about Australian wildlife, animals or nature from that specific date.
 
-STRICT FORMAT:
+For each story write:
+- A funny, punny or dramatic headline with relevant emojis (e.g. "🦘 Kangaroo Escapes Sydney Suburb, Hops Into Local Pub")
+- 1-2 sentence summary of what happened
+
+Format your response as a JSON array, no other text:
 [
   {
-    "animal": "main animal in one word (e.g. bilby, kangaroo, koala, fox)",
-    "headline": "short engaging headline WITHOUT emoji",
-    "summary": "1-2 sentence summary"
+    "headline": "🐨 funny headline with emojis here",
+    "summary": "Short summary of what happened."
   }
 ]
 
-RULES:
-- animal must be specific (bilby, bettong, fox — NOT "animal")
-- headline must NOT contain emoji
-- keep headlines short and punchy`;
+Focus only on stories genuinely from ${formattedDate}. If there are no major animal stories from that exact date, use the most recent Australian animal stories you can find and note the actual date. Keep it fun, light-hearted and emoji-rich!`;
+
+  const payload = JSON.stringify({
+    model: "gpt-4o-mini-search-preview",
+    messages: [{ role: "user", content: prompt }],
+  });
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -88,52 +66,18 @@ RULES:
       "Content-Type": "application/json",
       "Authorization": `Bearer ${OPENAI_API_KEY}`,
     },
-    body: JSON.stringify({
-      model: "gpt-4o-mini-search-preview",
-      messages: [{ role: "user", content: prompt }],
-    }),
+    body: payload,
   });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OpenAI error ${res.status}: ${text}`);
+  }
 
   const data = await res.json();
   let text = data.choices[0].message.content.trim();
   text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
   return JSON.parse(text);
-}
-
-// 🎯 klíčová funkce
-function getEmoji(animal, used) {
-  const key = animal.toLowerCase();
-
-  let emoji = EMOJI_MAP[key];
-
-  if (!emoji || used.has(emoji)) {
-    emoji = FALLBACK_EMOJIS.find(e => !used.has(e));
-  }
-
-  used.add(emoji);
-  return emoji;
-}
-
-function stylizeHeadline(headline, style) {
-  if (style === "dramatic") return headline.toUpperCase();
-  if (style === "cute") return headline + " 🥺";
-  if (style === "chaotic") return "BREAKING: " + headline;
-  return headline;
-}
-
-function processStories(stories) {
-  const used = new Set();
-
-  return stories.map((s, i) => {
-    const emoji = getEmoji(s.animal, used);
-    const style = STYLES[i % STYLES.length];
-
-    return {
-      ...s,
-      headline: `${emoji} ${stylizeHeadline(s.headline, style)}`
-    };
-  });
 }
 
 async function sendDiscord(stories, date) {
@@ -152,25 +96,45 @@ async function sendDiscord(stories, date) {
     embeds: [{
       title: `🦘 Pawstralia News — ${formattedDate}`,
       description,
-      color: 0x2E8B57,
+      color: 0x2E8B57,  // forest green
       footer: { text: "Pawstralia News • Australian Wildlife Daily Digest" },
     }],
   });
 
-  await fetch(DISCORD_WEBHOOK, {
+  const res = await fetch(DISCORD_WEBHOOK, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "DiscordBot (https://github.com, 1.0)",
+    },
     body: payload,
   });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord error ${res.status}: ${text}`);
+  }
+
+  console.log("Discord message sent!");
 }
 
 async function main() {
-  const yesterday = yesterdayDate();
+  console.log(`[${new Date().toISOString()}] Fetching Pawstralia News...`);
 
-  const raw = await fetchNews();
-  const stories = processStories(raw);
+  if (!OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
+  if (!DISCORD_WEBHOOK) throw new Error("Missing DISCORD_WEBHOOK_URL");
+
+  const yesterday = yesterdayDate();
+  console.log(`Searching for animal news from ${yesterday}...`);
+
+  const stories = await fetchNews();
+  console.log(`Found ${stories.length} stories.`);
+  stories.forEach(s => console.log(` - ${s.headline}`));
 
   await sendDiscord(stories, yesterday);
 }
 
-main();
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
